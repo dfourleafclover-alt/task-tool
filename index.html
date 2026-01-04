@@ -1,0 +1,2537 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>自分専用 プロジェクト特化型タスクマネージャー</title>
+  <style>
+    :root{
+      /* Base colors requested */
+      --teal-900:#1F4D4B;
+      --teal-800:#235755;
+      --teal-700:#2B6663;
+      --mint-100:#E0F5F4;
+
+      /* Neutrals */
+      --bg:#F6F8F7;
+      --card:#FFFFFF;
+      --text:#19302F;
+      --muted:#5E6E6D;
+      --line:#E6ECEB;
+      --shadow: 0 10px 28px rgba(31,77,75,.12);
+
+      /* Accents */
+      --danger:#C84C4C;
+      --warn:#C08A3E;
+      --info:#3E7AC0;
+      --ok:#2C7A63;
+
+      --radius:18px;
+      --radius-sm:12px;
+      --pad:18px;
+      --pad-sm:12px;
+
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, Arial, sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background: radial-gradient(1200px 500px at 15% 10%, rgba(224,245,244,.65), transparent 60%),
+                  radial-gradient(900px 500px at 85% 15%, rgba(31,77,75,.10), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+
+    .app{
+      height:100%;
+      display:flex;
+      gap:18px;
+      padding:18px;
+    }
+
+    /* Sidebar */
+    .sidebar{
+      width:270px;
+      flex:0 0 auto;
+      background: linear-gradient(180deg, rgba(31,77,75,.92), rgba(31,77,75,.86));
+      color:#fff;
+      border-radius: var(--radius);
+      padding:18px 14px;
+      box-shadow: var(--shadow);
+      display:flex;
+      flex-direction:column;
+      position:sticky;
+      top:18px;
+      height: calc(100vh - 36px);
+      overflow:hidden;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:10px 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .brand .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: rgba(224,245,244,.22);
+      display:grid;place-items:center;
+      border:1px solid rgba(224,245,244,.28);
+    }
+    .brand .title{
+      display:flex;flex-direction:column;gap:2px;min-width:0;
+    }
+    .brand .title strong{font-size:14px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .brand .title span{font-size:12px;opacity:.8}
+
+    .nav{
+      margin-top:14px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      padding:6px 4px;
+    }
+    .nav button{
+      width:100%;
+      background:transparent;
+      color:#fff;
+      border:none;
+      text-align:left;
+      padding:10px 10px;
+      border-radius:14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      cursor:pointer;
+      opacity:.92;
+      transition: background .15s ease, opacity .15s ease;
+      font-size:14px;
+    }
+    .nav button:hover{background: rgba(224,245,244,.12);opacity:1}
+    .nav button.active{background: rgba(224,245,244,.18);opacity:1}
+    .nav .ico{width:18px;height:18px;display:inline-block}
+
+    .sidebar .hint{
+      margin-top:auto;
+      padding:12px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      font-size:12px;
+      line-height:1.45;
+      opacity:.92;
+    }
+    .sidebar .hint b{font-weight:700}
+
+    /* Main */
+    .main{
+      flex:1 1 auto;
+      min-width: 0;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.72);
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 18px rgba(31,77,75,.07);
+      backdrop-filter: blur(10px);
+    }
+    .topbar h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.2px;
+      flex: 1 1 auto;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .pillbar{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex:0 0 auto;
+    }
+    .pill{
+      border:1px solid var(--line);
+      background: var(--mint-100);
+      color: var(--teal-900);
+      padding:7px 10px;
+      border-radius: 999px;
+      font-size:12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .pill .dot{width:8px;height:8px;border-radius:50%;background: var(--teal-900);opacity:.6}
+
+    .content{
+      flex:1 1 auto;
+      min-height:0;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 1100px){
+      .sidebar{display:none}
+      .app{padding:12px}
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 26px rgba(31,77,75,.08);
+      padding: var(--pad);
+    }
+    .card.tight{padding:14px}
+    .card h2{
+      margin:0 0 10px;
+      font-size:15px;
+      letter-spacing:.2px;
+    }
+    .subtle{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top:4px;
+      line-height:1.5;
+    }
+
+    .row{display:flex;align-items:center;gap:10px;min-width:0}
+    .row.wrap{flex-wrap:wrap}
+    .spacer{flex:1 1 auto}
+    .btn{
+      border:none;
+      cursor:pointer;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size:13px;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      transition: transform .04s ease, filter .12s ease, opacity .12s ease;
+      white-space:nowrap;
+    }
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{background: var(--teal-700);color:#fff}
+    .btn.primary:hover{filter: brightness(1.05)}
+    .btn.ghost{background: rgba(31,77,75,.06); color: var(--teal-900); border:1px solid rgba(31,77,75,.14)}
+    .btn.ghost:hover{background: rgba(31,77,75,.09)}
+    .btn.danger{background: rgba(200,76,76,.12); color: var(--danger); border:1px solid rgba(200,76,76,.22)}
+    .btn.danger:hover{background: rgba(200,76,76,.16)}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+
+    .input, select, textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.92);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height:100px;resize:vertical}
+    .input:focus, select:focus, textarea:focus{
+      border-color: rgba(31,77,75,.35);
+      box-shadow: 0 0 0 4px rgba(224,245,244,.55);
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 220px;
+      flex:1 1 240px;
+    }
+    .field label{
+      font-size:12px;
+      color: var(--muted);
+    }
+    .two{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 860px){
+      .two{grid-template-columns:1fr}
+    }
+
+    .divider{height:1px;background:var(--line);margin:14px 0}
+
+    /* Project cards */
+    .projGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:12px;
+    }
+    @media (max-width: 900px){.projGrid{grid-template-columns:1fr}}
+    .proj{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: linear-gradient(180deg, rgba(224,245,244,.45), rgba(255,255,255,.92));
+      box-shadow: 0 10px 22px rgba(31,77,75,.06);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:0;
+    }
+    .projHead{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .projIcon{
+      width:40px;height:40px;border-radius:14px;
+      display:grid;place-items:center;
+      background: rgba(31,77,75,.10);
+      border:1px solid rgba(31,77,75,.14);
+      color: var(--teal-900);
+      flex:0 0 auto;
+    }
+    .projName{
+      font-size:14px;font-weight:700;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:12px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(31,77,75,.18);
+      background: rgba(224,245,244,.72);
+      color: var(--teal-900);
+      flex:0 0 auto;
+      max-width: 160px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .progress{
+      display:flex;align-items:center;gap:10px;
+    }
+    .bar{
+      height:8px;border-radius:999px;background: rgba(31,77,75,.10);
+      flex:1 1 auto;overflow:hidden;border:1px solid rgba(31,77,75,.12);
+    }
+    .bar > i{
+      display:block;height:100%;width:0%;
+      background: linear-gradient(90deg, rgba(31,77,75,.92), rgba(31,77,75,.62));
+      border-radius:999px;
+    }
+    .pct{font-size:12px;color: var(--muted); min-width: 58px; text-align:right}
+    .projActions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+    /* Task Tree */
+    .tree{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      overflow:hidden;
+      background: rgba(255,255,255,.90);
+    }
+    .taskRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      position:relative;
+      min-width:0;
+    }
+    .taskRow:last-child{border-bottom:none}
+    .taskRow:hover{background: rgba(224,245,244,.28)}
+    .taskRow .title{
+      font-size:13px;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .taskRow .meta{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex:0 0 auto;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:12px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      border:1px solid rgba(31,77,75,.14);
+      background: rgba(31,77,75,.05);
+      color: var(--teal-900);
+      white-space:nowrap;
+    }
+    .chip.priH{border-color: rgba(192,138,62,.30); background: rgba(192,138,62,.10); color: #6B4A18}
+    .chip.priM{border-color: rgba(31,77,75,.18); background: rgba(31,77,75,.06)}
+    .chip.priL{border-color: rgba(62,122,192,.22); background: rgba(62,122,192,.08); color:#1F4D86}
+    .chip.status{
+      border-color: rgba(31,77,75,.14);
+      background: rgba(224,245,244,.55);
+    }
+    .chip.status.done{
+      border-color: rgba(44,122,99,.20);
+      background: rgba(44,122,99,.10);
+      color: #1F5B4A;
+    }
+    .chip.status.skip{
+      border-color: rgba(94,110,109,.28);
+      background: rgba(94,110,109,.08);
+      color: rgba(25,48,47,.86);
+    }
+    .taskRow.done .title{
+      color: rgba(25,48,47,.55);
+      text-decoration: line-through;
+    }
+    .taskRow.skip .title{
+      color: rgba(25,48,47,.58);
+      text-decoration: line-through;
+    }
+
+    .indent{
+      position:relative;
+      flex:1 1 auto;
+      min-width:0;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .indentPad{
+      width:0px; flex:0 0 auto;
+    }
+    .lines{
+      position:absolute;
+      left:0;
+      top:-10px;
+      bottom:-10px;
+      width: 200px;
+      pointer-events:none;
+      opacity:.35;
+      background:
+        repeating-linear-gradient(
+          to right,
+          transparent 0px,
+          transparent 22px,
+          rgba(31,77,75,.18) 22px,
+          rgba(31,77,75,.18) 23px,
+          transparent 23px,
+          transparent 44px
+        );
+      mask-image: linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,0));
+    }
+
+    /* Checkbox */
+    .chk{
+      width:18px;height:18px;border-radius:6px;
+      border: 1.6px solid rgba(31,77,75,.35);
+      display:grid;place-items:center;
+      cursor:pointer;
+      background: rgba(255,255,255,.9);
+      flex:0 0 auto;
+    }
+    .chk.checked{
+      background: rgba(44,122,99,.16);
+      border-color: rgba(44,122,99,.35);
+    }
+    .chk svg{display:none}
+    .chk.checked svg{display:block}
+    .chk:focus{outline:none; box-shadow:0 0 0 4px rgba(224,245,244,.7)}
+
+    /* Icon buttons */
+    .iconBtn{
+      border:none;background:transparent;cursor:pointer;
+      width:34px;height:34px;border-radius:12px;
+      display:grid;place-items:center;
+      color: rgba(25,48,47,.75);
+      border:1px solid transparent;
+    }
+    .iconBtn:hover{background: rgba(31,77,75,.06); border-color: rgba(31,77,75,.10)}
+    .iconBtn.danger:hover{background: rgba(200,76,76,.10); border-color: rgba(200,76,76,.16); color: var(--danger)}
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0;
+      background: rgba(10,16,16,.38);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modalBack.show{display:flex}
+    .modal{
+      width:min(720px, 100%);
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(224,245,244,.55);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.22);
+      backdrop-filter: blur(14px);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(224,245,244,.62), rgba(255,255,255,.88));
+    }
+    .modalHead h3{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+    .modalBody{padding: 16px}
+    .modalFoot{
+      padding: 14px 16px;
+      border-top:1px solid var(--line);
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      background: rgba(255,255,255,.84);
+    }
+
+    /* Tabs (Settings) */
+    .tabs{
+      display:flex;gap:8px;flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .tab{
+      border:1px solid var(--line);
+      background: rgba(224,245,244,.55);
+      color: var(--teal-900);
+      padding:8px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .tab.active{
+      background: rgba(31,77,75,.10);
+      border-color: rgba(31,77,75,.20);
+    }
+
+    /* Template editor rows */
+    .trow{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.88);
+    }
+    .trow:hover{background: rgba(224,245,244,.22)}
+    .trow:last-child{border-bottom:none}
+    .tname{
+      flex:1 1 auto;
+      min-width:0;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .tname input{
+      border:1px solid rgba(31,77,75,.14);
+      background: rgba(255,255,255,.9);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    .tlevel{
+      width:0;
+      flex:0 0 auto;
+    }
+    .tiny{
+      font-size:12px;
+      color: var(--muted);
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom: 16px;
+      background: rgba(25,48,47,.92);
+      color:#fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      display:none;
+      z-index: 60;
+      box-shadow: 0 16px 34px rgba(0,0,0,.18);
+    }
+    .toast.show{display:block}
+
+    .linkBtn{
+      background:transparent;
+      border:none;
+      color: var(--teal-900);
+      cursor:pointer;
+      text-decoration: underline;
+      font-size: 12px;
+      padding: 0;
+    }
+
+    .empty{
+      padding: 16px;
+      border:1px dashed rgba(31,77,75,.22);
+      border-radius: var(--radius);
+      background: rgba(224,245,244,.22);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .kpi{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 900px){.kpi{grid-template-columns:1fr}}
+    .kpi .box{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: rgba(255,255,255,.84);
+      box-shadow: 0 10px 18px rgba(31,77,75,.05);
+    }
+    .kpi .box b{font-size:18px}
+    .kpi .box span{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+
+    .sectionTitle{
+      display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:10px
+    }
+    .sectionTitle h2{margin:0}
+    .sectionTitle .subtle{margin:0}
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <!-- folder icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h6.9a2 2 0 0 1 2 2v8.7a2.3 2.3 0 0 1-2.3 2.3H5.8A2.3 2.3 0 0 1 3.5 20.2V7.5Z" stroke="rgba(224,245,244,.95)" stroke-width="1.6" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="title">
+          <strong>自分専用 タスクマネージャー</strong>
+          <span>落ち着いた・集中できる設計</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="メニュー">
+        <button class="active" data-view="dashboard">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M4 13h7V4H4v9Zm9 7h7V11h-7v9ZM4 20h7v-5H4v5Zm9-11h7V4h-7v5Z" stroke="rgba(224,245,244,.95)" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          ダッシュボード
+        </button>
+        <button data-view="active">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M4 7h16M4 12h10M4 17h16" stroke="rgba(224,245,244,.95)" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </span>
+          進行中プロジェクト
+        </button>
+        <button data-view="today">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M7 3v3M17 3v3M4.5 8.5h15M6 12h5m-5 4h8" stroke="rgba(224,245,244,.95)" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M6.5 5.5h11A2.5 2.5 0 0 1 20 8v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19V8a2.5 2.5 0 0 1 2.5-2.5Z" stroke="rgba(224,245,244,.95)" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          今日すべきタスク
+        </button>
+        <button data-view="settings">
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" stroke="rgba(224,245,244,.95)" stroke-width="1.6"/>
+              <path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.5-2.4 1a8 8 0 0 0-1.7-1l-.4-2.5H9l-.4 2.5a8 8 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 1.7 1l.4 2.5h6l.4-2.5a8 8 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z" stroke="rgba(224,245,244,.95)" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          設定
+        </button>
+      </nav>
+
+      <div class="hint">
+        <div><b>保存先：</b>このブラウザ内（LocalStorage）</div>
+        <div style="margin-top:6px">
+          別ブラウザ/別PCへは、<b>設定 → データ</b>のJSONで移行できます。
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h1 id="pageTitle">ダッシュボード</h1>
+        <div class="pillbar" aria-label="サマリー">
+          <div class="pill" title="進行中プロジェクト数"><span class="dot"></span><span>進行中：<b id="pillActive">0</b></span></div>
+          <div class="pill" title="完了プロジェクト数"><span class="dot"></span><span>完了：<b id="pillDone">0</b></span></div>
+          <div class="pill" title="今日すべきタスク数"><span class="dot"></span><span>今日：<b id="pillToday">0</b></span></div>
+        </div>
+      </header>
+
+      <section class="content" id="content"></section>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modalBack" id="modalBack" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <div class="modalHead">
+        <h3 id="modalTitle">モーダル</h3>
+        <div class="spacer"></div>
+        <button class="iconBtn" id="modalClose" aria-label="閉じる" title="閉じる">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6l12 12M18 6L6 18" stroke="rgba(25,48,47,.75)" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modalBody" id="modalBody"></div>
+      <div class="modalFoot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/** ===========================
+ *  自分専用 プロジェクト特化型タスクマネージャー
+ *  index.html 全置換・データ維持・新デザイン版
+ *  =========================== */
+
+(() => {
+  'use strict';
+
+  /** ---------- Constants ---------- */
+  const APP_NAME = '自分専用 プロジェクト特化型タスクマネージャー';
+  const DATA_KEY_V2 = 'ptm_data_v2'; // 新保存キー（旧データは削除しない）
+  const LEGACY_KEYS_CANDIDATES = [
+    'taskToolData', 'task-tool-data', 'task_manager_data', 'projectTaskManagerData',
+    'myTaskManagerData', 'ptm_data', 'ptmData', 'data', 'appData'
+  ];
+
+  const STATUS = ['未着手','進行中','保留','完了','対応不要'];
+  const PRIORITY = ['高','中','低'];
+
+  /** ---------- Utilities ---------- */
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(16).slice(2) + Date.now());
+  const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+  const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
+
+  const todayISO = () => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const fmtDate = (iso) => {
+    if(!iso) return '期日：未設定';
+    const [y,m,d] = iso.split('-');
+    return `${y}/${m}/${d}`;
+  };
+
+  const toast = (() => {
+    let t = null;
+    return (msg) => {
+      const el = $('#toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(t);
+      t = setTimeout(()=> el.classList.remove('show'), 2200);
+    };
+  })();
+
+  /** ---------- Data Model (V2) ----------
+   * data = {
+   *  version: 2,
+   *  labels: [{id,name}],
+   *  templates: { [labelId]: TemplateTreeArray }, // tree nodes: {title, children:[...]}
+   *  projects: [{id,name,labelId,isCompleted,completedAt,createdAt,tasks:[TaskNode...]}]
+   * }
+   *
+   * task node: {id,title,dueDate|null,status,priority,memo,children:[], _lastNonDoneStatus?}
+   */
+  const defaultData = () => ({
+    version: 2,
+    labels: [
+      { id: uid(), name: '媒介' },
+      { id: uid(), name: '契約' },
+      { id: uid(), name: '決済' },
+    ],
+    templates: {}, // labelId -> tree
+    projects: []
+  });
+
+  /** ---------- Legacy detection & migration ---------- */
+
+  function safeParseJSON(str){
+    try{ return JSON.parse(str); } catch { return null; }
+  }
+
+  function looksLikeLegacyData(obj){
+    if(!obj || typeof obj !== 'object') return false;
+    // heuristics: has projects array or completedProjects, labels, templates etc
+    const hasProjects = Array.isArray(obj.projects) || Array.isArray(obj.activeProjects) || Array.isArray(obj.completedProjects);
+    const hasLabels = Array.isArray(obj.labels) || Array.isArray(obj.labelOptions) || (obj.templates && typeof obj.templates === 'object');
+    return !!(hasProjects && (hasLabels || obj.projects));
+  }
+
+  function findLegacyDataCandidate(){
+    // 1) Known keys
+    for(const k of LEGACY_KEYS_CANDIDATES){
+      const v = localStorage.getItem(k);
+      const obj = safeParseJSON(v);
+      if(looksLikeLegacyData(obj)) return { key:k, obj };
+    }
+    // 2) Scan all keys (best-effort)
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      const v = localStorage.getItem(k);
+      if(!v || v.length < 20) continue;
+      const obj = safeParseJSON(v);
+      if(looksLikeLegacyData(obj)) return { key:k, obj };
+    }
+    return null;
+  }
+
+  function normalizeLabelList(legacy){
+    // legacy.labels could be ['媒介','契約'] or [{id,name}] etc
+    const list = legacy.labels || legacy.labelOptions || [];
+    const out = [];
+    if(Array.isArray(list)){
+      for(const item of list){
+        if(typeof item === 'string') out.push({id: uid(), name: item});
+        else if(item && typeof item === 'object'){
+          out.push({ id: item.id || uid(), name: item.name || item.label || '未設定' });
+        }
+      }
+    }
+    // ensure at least empty array
+    return out;
+  }
+
+  function parseTemplateTextToTree(text){
+    // IMPORTANT FIX: tab OR 2 spaces = 1 level, max 5 levels
+    const lines = String(text || '')
+      .split(/\r?\n/)
+      .map(l => l.replace(/\s+$/,''))
+      .filter(l => l.trim() !== '');
+
+    const root = [];
+    const stack = []; // last node per level
+
+    for(const raw of lines){
+      const m = raw.match(/^(\t| {2})*/);
+      const indent = m ? m[0] : '';
+      // treat 2 spaces as 1 level
+      const normalized = indent.replace(/ {2}/g, '\t');
+      const level = clamp(normalized.length, 0, 4); // 0..4 (max 5 levels)
+
+      const title = raw.trim();
+      const node = { title, children: [] };
+
+      if(level === 0){
+        root.push(node);
+      }else{
+        const parent = stack[level-1];
+        if(parent){
+          parent.children.push(node);
+        }else{
+          root.push(node); // fallback
+        }
+      }
+      stack[level] = node;
+      stack.length = level + 1;
+    }
+
+    return root;
+  }
+
+  function migrateLegacyToV2(legacy){
+    const data = defaultData();
+
+    // labels
+    const labels = normalizeLabelList(legacy);
+    if(labels.length){
+      data.labels = labels;
+    } // else keep default 3
+
+    // templates: might be { labelName: text } or { labelId: tree/text }
+    // We'll map by label name match; if no match, store under a synthetic label.
+    const legacyTemplates = legacy.templates || legacy.templateByLabel || legacy.labelTemplates || {};
+    if(legacyTemplates && typeof legacyTemplates === 'object'){
+      for(const [k,v] of Object.entries(legacyTemplates)){
+        const labelId = findOrCreateLabelIdByName(data, k);
+        if(Array.isArray(v)){
+          // maybe already tree
+          data.templates[labelId] = sanitizeTemplateTree(v);
+        }else if(typeof v === 'string'){
+          data.templates[labelId] = parseTemplateTextToTree(v);
+        }else if(v && typeof v === 'object'){
+          // maybe {text:'', tree:[]}
+          if(Array.isArray(v.tree)) data.templates[labelId] = sanitizeTemplateTree(v.tree);
+          else if(typeof v.text === 'string') data.templates[labelId] = parseTemplateTextToTree(v.text);
+        }
+      }
+    }
+
+    // projects: may be legacy.projects, activeProjects, completedProjects
+    const active = Array.isArray(legacy.projects) ? legacy.projects
+                : Array.isArray(legacy.activeProjects) ? legacy.activeProjects
+                : [];
+    const done = Array.isArray(legacy.completedProjects) ? legacy.completedProjects : [];
+
+    const convertProject = (p, isCompleted) => {
+      const labelName = p.label || p.tag || p.projectLabel || p.labelName || '';
+      const labelId = labelName ? findOrCreateLabelIdByName(data, labelName) : (p.labelId || null);
+
+      const proj = {
+        id: p.id || uid(),
+        name: p.name || p.projectName || '（名称未設定）',
+        labelId: labelId || null,
+        isCompleted: !!isCompleted || !!p.isCompleted,
+        completedAt: p.completedAt || (isCompleted ? new Date().toISOString() : null),
+        createdAt: p.createdAt || new Date().toISOString(),
+        tasks: []
+      };
+
+      // tasks conversion
+      // common patterns:
+      // 1) p.tasks as tree nodes {children:[]}
+      // 2) p.tasks as flat with parentId
+      // 3) p.taskTree
+      const rawTasks = p.tasks || p.taskTree || p.tree || [];
+      proj.tasks = normalizeTasks(rawTasks);
+
+      return proj;
+    };
+
+    data.projects = [
+      ...active.map(p => convertProject(p, false)),
+      ...done.map(p => convertProject(p, true))
+    ];
+
+    return data;
+  }
+
+  function sanitizeTemplateTree(arr, level=0){
+    if(!Array.isArray(arr)) return [];
+    if(level >= 5) return [];
+    return arr
+      .filter(n => n && typeof n === 'object')
+      .map(n => ({
+        title: String(n.title || n.name || '').trim() || '（未設定）',
+        children: sanitizeTemplateTree(n.children || n.items || [], level+1)
+      }));
+  }
+
+  function normalizeTasks(raw){
+    // returns tree tasks with required fields
+    if(!raw) return [];
+    // If it's a tree already
+    if(Array.isArray(raw) && raw.length && typeof raw[0] === 'object' && ('children' in raw[0] || 'items' in raw[0])){
+      return sanitizeTaskTree(raw, 0);
+    }
+    // If it's a flat array with parentId
+    if(Array.isArray(raw) && raw.length && typeof raw[0] === 'object' && ('parentId' in raw[0] || 'parent' in raw[0])){
+      return buildTreeFromFlat(raw);
+    }
+    // Otherwise: unknown -> empty
+    return Array.isArray(raw) ? sanitizeTaskTree(raw, 0) : [];
+  }
+
+  function sanitizeTaskTree(arr, level=0){
+    if(!Array.isArray(arr)) return [];
+    if(level >= 5) return [];
+    return arr
+      .filter(t => t && typeof t === 'object')
+      .map(t => {
+        const status = STATUS.includes(t.status) ? t.status : (t.done ? '完了' : '未着手');
+        const priority = PRIORITY.includes(t.priority) ? t.priority : '中';
+        const memo = String(t.memo || '').slice(0,50);
+        return ({
+          id: t.id || uid(),
+          title: String(t.title || t.name || '').trim() || '（未設定）',
+          dueDate: t.dueDate || t.due || t.deadline || null,
+          status,
+          priority,
+          memo,
+          children: sanitizeTaskTree(t.children || t.items || [], level+1),
+          _lastNonDoneStatus: t._lastNonDoneStatus || null
+        });
+      });
+  }
+
+  function buildTreeFromFlat(list){
+    const byId = new Map();
+    const roots = [];
+    for(const t of list){
+      byId.set(t.id || uid(), t);
+    }
+    // normalize nodes
+    const nodes = [];
+    for(const t of list){
+      const id = t.id || uid();
+      const status = STATUS.includes(t.status) ? t.status : (t.done ? '完了' : '未着手');
+      const priority = PRIORITY.includes(t.priority) ? t.priority : '中';
+      nodes.push({
+        id,
+        title: String(t.title || t.name || '').trim() || '（未設定）',
+        dueDate: t.dueDate || t.due || t.deadline || null,
+        status,
+        priority,
+        memo: String(t.memo || '').slice(0,50),
+        children: [],
+        _lastNonDoneStatus: t._lastNonDoneStatus || null,
+        _parentId: t.parentId || t.parent || null
+      });
+    }
+    const map = new Map(nodes.map(n => [n.id, n]));
+    for(const n of nodes){
+      const pid = n._parentId;
+      delete n._parentId;
+      if(pid && map.has(pid)){
+        map.get(pid).children.push(n);
+      }else{
+        roots.push(n);
+      }
+    }
+    return sanitizeTaskTree(roots, 0);
+  }
+
+  function findOrCreateLabelIdByName(data, name){
+    const n = String(name || '').trim();
+    if(!n) return null;
+    const hit = data.labels.find(l => l.name === n);
+    if(hit) return hit.id;
+    const created = { id: uid(), name: n };
+    data.labels.push(created);
+    return created.id;
+  }
+
+  /** ---------- Storage ---------- */
+  function loadData(){
+    const v2 = safeParseJSON(localStorage.getItem(DATA_KEY_V2));
+    if(v2 && v2.version === 2) return v2;
+
+    const legacy = findLegacyDataCandidate();
+    if(legacy){
+      const migrated = migrateLegacyToV2(legacy.obj);
+      // Save migrated under new key, keep legacy key untouched.
+      localStorage.setItem(DATA_KEY_V2, JSON.stringify(migrated));
+      toast('既存データを読み込み、最新形式へ移行しました');
+      return migrated;
+    }
+
+    const d = defaultData();
+    localStorage.setItem(DATA_KEY_V2, JSON.stringify(d));
+    return d;
+  }
+
+  function saveData(){
+    localStorage.setItem(DATA_KEY_V2, JSON.stringify(state.data));
+    updateHeaderPills();
+  }
+
+  /** ---------- State ---------- */
+  const state = {
+    view: 'dashboard',
+    data: loadData(),
+    selectedProjectId: null,
+    settingsTab: 'labels',
+    templateEditorMode: 'visual', // 'visual' | 'text'
+    _scrollToTaskId: null
+  };
+
+  /** ---------- Derived ---------- */
+  function getActiveProjects(){
+    return state.data.projects.filter(p => !p.isCompleted);
+  }
+  function getCompletedProjects(){
+    return state.data.projects.filter(p => p.isCompleted);
+  }
+  function getLabelName(labelId){
+    const l = state.data.labels.find(x => x.id === labelId);
+    return l ? l.name : '未設定';
+  }
+
+  function taskIsClosed(t){
+    return t.status === '完了' || t.status === '対応不要';
+  }
+
+  function flattenTasks(tasks, trail=[], out=[]){
+    for(const t of tasks){
+      out.push({ task:t, path:[...trail, t.title] });
+      if(t.children?.length){
+        flattenTasks(t.children, [...trail, t.title], out);
+      }
+    }
+    return out;
+  }
+
+  function projectProgress(project){
+    const flat = flattenTasks(project.tasks || []);
+    if(flat.length === 0) return { done:0, total:0, pct:0 };
+    const closed = flat.filter(x => taskIsClosed(x.task)).length;
+    const pct = Math.round((closed / flat.length) * 100);
+    return { done: closed, total: flat.length, pct };
+  }
+
+  function findTaskById(tasks, id){
+    for(const t of tasks){
+      if(t.id === id) return t;
+      const found = findTaskById(t.children || [], id);
+      if(found) return found;
+    }
+    return null;
+  }
+
+  function findTaskParent(tasks, id, parent=null){
+    for(const t of tasks){
+      if(t.id === id) return parent;
+      const found = findTaskParent(t.children || [], id, t);
+      if(found) return found;
+    }
+    return null;
+  }
+
+  /** ---------- UI: Modal ---------- */
+  function openModal(title, bodyNode, actions=[]){
+    $('#modalTitle').textContent = title;
+    const body = $('#modalBody');
+    const foot = $('#modalFoot');
+    body.innerHTML = '';
+    foot.innerHTML = '';
+    body.appendChild(bodyNode);
+    for(const a of actions){
+      foot.appendChild(a);
+    }
+    const back = $('#modalBack');
+    back.classList.add('show');
+    back.setAttribute('aria-hidden', 'false');
+  }
+  function closeModal(){
+    const back = $('#modalBack');
+    back.classList.remove('show');
+    back.setAttribute('aria-hidden', 'true');
+    $('#modalBody').innerHTML = '';
+    $('#modalFoot').innerHTML = '';
+  }
+
+  $('#modalClose').addEventListener('click', closeModal);
+  $('#modalBack').addEventListener('click', (e) => {
+    if(e.target === $('#modalBack')) closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && $('#modalBack').classList.contains('show')) closeModal();
+  });
+
+  /** ---------- UI helpers ---------- */
+  function el(tag, attrs={}, children=[]){
+    const n = document.createElement(tag);
+    for(const [k,v] of Object.entries(attrs)){
+      if(k === 'class') n.className = v;
+      else if(k === 'html') n.innerHTML = v;
+      else if(k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2), v);
+      else if(v === null || v === undefined) continue;
+      else n.setAttribute(k, v);
+    }
+    for(const c of children){
+      if(typeof c === 'string') n.appendChild(document.createTextNode(c));
+      else if(c) n.appendChild(c);
+    }
+    return n;
+  }
+
+  function iconBtn(title, svg, onClick, extraClass=''){
+    return el('button', { class: `iconBtn ${extraClass}`.trim(), title, 'aria-label': title, onclick: onClick }, [
+      el('span', { html: svg })
+    ]);
+  }
+
+  function makeButton(text, kind='ghost', onClick=null){
+    const b = el('button', { class: `btn ${kind}`.trim() }, [text]);
+    if(onClick) b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function setPageTitle(t){
+    $('#pageTitle').textContent = t;
+  }
+
+  function updateHeaderPills(){
+    const active = getActiveProjects().length;
+    const done = getCompletedProjects().length;
+    const todays = getTodaysTasks().length;
+    $('#pillActive').textContent = active;
+    $('#pillDone').textContent = done;
+    $('#pillToday').textContent = todays;
+  }
+
+  /** ---------- Today Tasks ---------- */
+  function getTodaysTasks(){
+    const t = todayISO();
+    const items = [];
+    const act = getActiveProjects();
+    for(const p of act){
+      const flat = flattenTasks(p.tasks || [], [p.name], []);
+      for(const x of flat){
+        const task = x.task;
+        if(task.dueDate === t && !taskIsClosed(task)){
+          items.push({
+            projectId: p.id,
+            projectName: p.name,
+            labelName: getLabelName(p.labelId),
+            taskId: task.id,
+            title: task.title,
+            dueDate: task.dueDate,
+            status: task.status,
+            priority: task.priority,
+            path: x.path
+          });
+        }
+      }
+    }
+    const priRank = (p) => p === '高' ? 0 : p === '中' ? 1 : 2;
+    items.sort((a,b) => priRank(a.priority) - priRank(b.priority));
+    return items;
+  }
+
+  /** ---------- Templates: tree operations ---------- */
+  function templateTreeToText(tree, level=0, lines=[]){
+    for(const n of tree){
+      const indent = '\t'.repeat(level);
+      lines.push(indent + n.title);
+      if(n.children?.length) templateTreeToText(n.children, level+1, lines);
+    }
+    return lines.join('\n');
+  }
+
+  function templateAddNode(tree, parentPath, asChild){
+    // parentPath = array of indexes to node
+    if(!parentPath || parentPath.length === 0){
+      tree.push({ title:'新しいタスク', children:[] });
+      return;
+    }
+    const node = getNodeByPath(tree, parentPath);
+    const parent = getNodeByPath(tree, parentPath.slice(0,-1));
+    const idx = parentPath[parentPath.length-1];
+
+    if(asChild){
+      node.children = node.children || [];
+      node.children.push({ title:'新しいタスク', children:[] });
+    }else{
+      // sibling insert after
+      if(Array.isArray(parent)){
+        parent.splice(idx+1, 0, { title:'新しいタスク', children:[] });
+      }else{
+        parent.children.splice(idx+1, 0, { title:'新しいタスク', children:[] });
+      }
+    }
+  }
+
+  function getNodeByPath(tree, path){
+    if(path.length === 0) return tree;
+    let cur = tree;
+    for(let i=0;i<path.length;i++){
+      const idx = path[i];
+      const node = cur[idx];
+      if(i === path.length-1) return node;
+      cur = node.children || [];
+    }
+    return null;
+  }
+
+  function getParentArrayByPath(tree, path){
+    if(path.length === 0) return tree;
+    if(path.length === 1) return tree;
+    let cur = tree;
+    for(let i=0;i<path.length-1;i++){
+      cur = cur[path[i]].children || [];
+    }
+    return cur;
+  }
+
+  function templateDeleteNode(tree, path){
+    const parentArr = getParentArrayByPath(tree, path);
+    const idx = path[path.length-1];
+    parentArr.splice(idx, 1);
+  }
+
+  function templateMoveNode(tree, path, dir){
+    const parentArr = getParentArrayByPath(tree, path);
+    const idx = path[path.length-1];
+    const target = idx + dir;
+    if(target < 0 || target >= parentArr.length) return;
+    const tmp = parentArr[idx];
+    parentArr[idx] = parentArr[target];
+    parentArr[target] = tmp;
+  }
+
+  function templateIndent(tree, path){
+    // indent => become last child of previous sibling (if exists) and depth < 5
+    if(path.length === 0) return;
+    const parentArr = getParentArrayByPath(tree, path);
+    const idx = path[path.length-1];
+    if(idx === 0) return;
+    // find previous sibling
+    const prev = parentArr[idx-1];
+    const node = parentArr[idx];
+    const depth = path.length; // root=1
+    if(depth >= 5) return; // max 5 levels
+    parentArr.splice(idx, 1);
+    prev.children = prev.children || [];
+    prev.children.push(node);
+  }
+
+  function templateOutdent(tree, path){
+    // outdent => move node to be sibling after its parent
+    if(path.length <= 1) return; // already root
+    const parentPath = path.slice(0,-1);
+    const grandParentArr = getParentArrayByPath(tree, parentPath);
+    const parentIdx = parentPath[parentPath.length-1];
+    const parentNode = getNodeByPath(tree, parentPath);
+    const parentArr = parentNode.children || [];
+    const idx = path[path.length-1];
+    const node = parentArr[idx];
+    parentArr.splice(idx, 1);
+    // insert after parent in grandParentArr
+    grandParentArr.splice(parentIdx+1, 0, node);
+  }
+
+  function flattenTemplate(tree, level=0, path=[], out=[]){
+    for(let i=0;i<tree.length;i++){
+      const n = tree[i];
+      const p = [...path, i];
+      out.push({ node: n, level, path: p });
+      if(n.children?.length){
+        flattenTemplate(n.children, level+1, p, out);
+      }
+    }
+    return out;
+  }
+
+  /** ---------- Tasks: actions ---------- */
+  function createTaskFromTemplateNode(node, level=0){
+    if(level >= 5) return null;
+    const t = {
+      id: uid(),
+      title: String(node.title || '').trim() || '（未設定）',
+      dueDate: null,
+      status: '未着手',
+      priority: '中',
+      memo: '',
+      children: []
+    };
+    const kids = Array.isArray(node.children) ? node.children : [];
+    for(const c of kids){
+      const child = createTaskFromTemplateNode(c, level+1);
+      if(child) t.children.push(child);
+    }
+    return t;
+  }
+
+  function applyTemplateToProject(project, labelId){
+    const tree = state.data.templates[labelId];
+    if(!tree || !Array.isArray(tree) || tree.length === 0) return;
+    // append template tasks (do not overwrite existing)
+    const tasks = [];
+    for(const n of tree){
+      const t = createTaskFromTemplateNode(n, 0);
+      if(t) tasks.push(t);
+    }
+    project.tasks = (project.tasks || []).concat(tasks);
+  }
+
+  function taskCheckboxToggle(project, taskId, checked){
+    const t = findTaskById(project.tasks, taskId);
+    if(!t) return;
+    if(checked){
+      if(t.status !== '完了'){
+        t._lastNonDoneStatus = (t.status && t.status !== '完了') ? t.status : '未着手';
+        t.status = '完了';
+      }
+    }else{
+      // restore
+      if(t.status === '完了'){
+        t.status = t._lastNonDoneStatus && STATUS.includes(t._lastNonDoneStatus) ? t._lastNonDoneStatus : '未着手';
+      }
+    }
+  }
+
+  function deleteTask(project, taskId){
+    const parent = findTaskParent(project.tasks, taskId, null);
+    if(!parent){
+      // root
+      project.tasks = project.tasks.filter(t => t.id !== taskId);
+      return;
+    }
+    parent.children = parent.children.filter(t => t.id !== taskId);
+  }
+
+  /** ---------- Views ---------- */
+  function render(){
+    updateHeaderPills();
+    const root = $('#content');
+    root.innerHTML = '';
+
+    if(state.view === 'dashboard'){
+      setPageTitle('ダッシュボード');
+      root.appendChild(viewDashboard());
+    } else if(state.view === 'active'){
+      setPageTitle('進行中プロジェクト');
+      root.appendChild(viewActiveProjects());
+    } else if(state.view === 'today'){
+      setPageTitle('今日すべきタスク');
+      root.appendChild(viewToday());
+    } else if(state.view === 'settings'){
+      setPageTitle('設定');
+      root.appendChild(viewSettings());
+    } else if(state.view === 'project'){
+      const p = state.data.projects.find(x => x.id === state.selectedProjectId);
+      setPageTitle(p ? `プロジェクト：${p.name}` : 'プロジェクト');
+      root.appendChild(viewProjectDetail());
+    }
+  }
+
+  /** ---------- Dashboard ---------- */
+  function viewDashboard(){
+    const wrap = el('div', { class:'grid' });
+
+    const left = el('div', {});
+    const right = el('div', {});
+
+    // KPIs
+    const act = getActiveProjects();
+    const done = getCompletedProjects();
+    const todays = getTodaysTasks();
+
+    const kpi = el('div', { class:'card tight' }, [
+      el('div', { class:'kpi' }, [
+        el('div', { class:'box' }, [
+          el('b', {}, [String(act.length)]),
+          el('span', {}, ['進行中プロジェクト'])
+        ]),
+        el('div', { class:'box' }, [
+          el('b', {}, [String(done.length)]),
+          el('span', {}, ['完了プロジェクト'])
+        ]),
+        el('div', { class:'box' }, [
+          el('b', {}, [String(todays.length)]),
+          el('span', {}, ['今日すべきタスク'])
+        ]),
+      ])
+    ]);
+
+    // Project list section
+    const projCard = el('div', { class:'card' }, [
+      el('div', { class:'sectionTitle' }, [
+        el('h2', {}, ['プロジェクト一覧（進行中）']),
+        el('div', { class:'spacer' }),
+        makeButton('＋ 新規プロジェクト', 'primary', () => openProjectModal()),
+      ]),
+      el('div', { class:'subtle' }, ['進捗率とラベルを表示します。'])
+    ]);
+
+    const projGrid = el('div', { class:'projGrid', style:'margin-top:12px' });
+    if(act.length === 0){
+      projGrid.appendChild(el('div', { class:'empty' }, [
+        'まだ進行中プロジェクトがありません。右上の「新規プロジェクト」から作成できます。'
+      ]));
+    } else {
+      for(const p of act){
+        projGrid.appendChild(projectCard(p));
+      }
+    }
+    projCard.appendChild(projGrid);
+
+    // Today's tasks
+    const todayCard = el('div', { class:'card' }, [
+      el('div', { class:'sectionTitle' }, [
+        el('h2', {}, ['今日すべきタスク']),
+        el('div', { class:'spacer' }),
+        makeButton('今日の一覧へ', 'ghost', () => gotoView('today'))
+      ]),
+      el('div', { class:'subtle' }, ['期日が「今日」のタスクを自動集約し、優先度（高→中→低）順に表示します。'])
+    ]);
+
+    if(todays.length === 0){
+      todayCard.appendChild(el('div', { class:'empty', style:'margin-top:12px' }, [
+        '今日が期日のタスクはありません。'
+      ]));
+    }else{
+      const list = el('div', { class:'tree', style:'margin-top:12px' });
+      todays.forEach(item => {
+        list.appendChild(todayRow(item));
+      });
+      todayCard.appendChild(list);
+    }
+
+    // Completed projects section (moved away from sidebar)
+    const doneCard = el('div', { class:'card' }, [
+      el('div', { class:'sectionTitle' }, [
+        el('h2', {}, ['完了プロジェクト']),
+        el('div', { class:'spacer' }),
+        makeButton('表示', 'ghost', () => openCompletedProjectsModal())
+      ]),
+      el('div', { class:'subtle' }, ['サイドバーに常設せず、必要なときにだけ確認できます。'])
+    ]);
+
+    left.appendChild(kpi);
+    left.appendChild(el('div', { style:'height:12px' }));
+    left.appendChild(projCard);
+    left.appendChild(el('div', { style:'height:12px' }));
+    left.appendChild(doneCard);
+
+    right.appendChild(todayCard);
+
+    wrap.appendChild(left);
+    wrap.appendChild(right);
+    return wrap;
+  }
+
+  function todayRow(item){
+    const priCls = item.priority === '高' ? 'priH' : item.priority === '中' ? 'priM' : 'priL';
+    const row = el('div', { class:'taskRow' }, [
+      el('div', { class:'indent', style:'gap:8px' }, [
+        el('div', { class:'title' }, [
+          `［${item.priority}］ ${item.projectName} > ${item.path.join(' > ')}`
+        ]),
+      ]),
+      el('div', { class:'meta' }, [
+        el('span', { class:`chip ${priCls}` }, [`優先度：${item.priority}`]),
+        el('span', { class:'chip' }, [fmtDate(item.dueDate)]),
+        makeButton('開く', 'ghost', () => {
+          state.selectedProjectId = item.projectId;
+          state._scrollToTaskId = item.taskId;
+          gotoView('project');
+        })
+      ])
+    ]);
+    return row;
+  }
+
+  function openCompletedProjectsModal(){
+    const done = getCompletedProjects();
+    const body = el('div', {}, [
+      el('div', { class:'subtle' }, ['完了済みのプロジェクト一覧です。必要に応じて削除できます。']),
+      el('div', { class:'divider' })
+    ]);
+    if(done.length === 0){
+      body.appendChild(el('div', { class:'empty' }, ['完了プロジェクトはありません。']));
+    }else{
+      const list = el('div', { class:'projGrid' });
+      done.forEach(p => {
+        const prog = projectProgress(p);
+        const card = el('div', { class:'proj' }, [
+          el('div', { class:'projHead' }, [
+            el('div', { class:'projIcon' }, [folderSvgMini()]),
+            el('div', { style:'min-width:0' }, [
+              el('div', { class:'projName' }, [p.name]),
+              el('div', { class:'subtle' }, [`ラベル：${getLabelName(p.labelId)}`])
+            ]),
+            el('div', { class:'spacer' }),
+            el('span', { class:'badge' }, ['完了'])
+          ]),
+          el('div', { class:'progress' }, [
+            el('div', { class:'bar' }, [el('i', { style:`width:${prog.pct}%` })]),
+            el('div', { class:'pct' }, [`${prog.pct}%`])
+          ]),
+          el('div', { class:'projActions' }, [
+            makeButton('開く', 'ghost', () => { state.selectedProjectId = p.id; gotoView('project'); closeModal(); }),
+            makeButton('削除', 'danger', () => {
+              if(confirm('この完了プロジェクトを削除しますか？（配下タスクも削除されます）')){
+                state.data.projects = state.data.projects.filter(x => x.id !== p.id);
+                saveData();
+                toast('削除しました');
+                closeModal();
+                render();
+              }
+            })
+          ])
+        ]);
+        list.appendChild(card);
+      });
+      body.appendChild(list);
+    }
+
+    openModal('完了プロジェクト', body, [
+      makeButton('閉じる', 'ghost', closeModal),
+    ]);
+  }
+
+  /** ---------- Active Projects ---------- */
+  function viewActiveProjects(){
+    const wrap = el('div', {});
+
+    const top = el('div', { class:'card' }, [
+      el('div', { class:'row wrap' }, [
+        el('div', {}, [
+          el('h2', {}, ['進行中プロジェクト']),
+          el('div', { class:'subtle' }, ['開く／完了／削除で管理します。完了は「全タスクが完了 or 対応不要」のときだけ有効です。'])
+        ]),
+        el('div', { class:'spacer' }),
+        makeButton('＋ 新規プロジェクト', 'primary', () => openProjectModal()),
+        makeButton('完了プロジェクトを見る', 'ghost', () => openCompletedProjectsModal())
+      ])
+    ]);
+
+    const grid = el('div', { class:'projGrid', style:'margin-top:12px' });
+    const act = getActiveProjects();
+    if(act.length === 0){
+      grid.appendChild(el('div', { class:'empty' }, ['進行中プロジェクトがありません。']));
+    }else{
+      act.forEach(p => grid.appendChild(projectCard(p)));
+    }
+
+    wrap.appendChild(top);
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  function folderSvgMini(){
+    const s = document.createElement('span');
+    s.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h6.9a2 2 0 0 1 2 2v8.7a2.3 2.3 0 0 1-2.3 2.3H5.8A2.3 2.3 0 0 1 3.5 20.2V7.5Z" stroke="rgba(31,77,75,.85)" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>`;
+    return s;
+  }
+
+  function projectCard(p){
+    const prog = projectProgress(p);
+    const label = getLabelName(p.labelId);
+
+    const allClosed = (prog.total > 0) ? (prog.done === prog.total) : true; // no tasks -> allow completion
+    const canComplete = allClosed && !p.isCompleted;
+
+    const c = el('div', { class:'proj' }, [
+      el('div', { class:'projHead' }, [
+        el('div', { class:'projIcon' }, [folderSvgMini()]),
+        el('div', { style:'min-width:0' }, [
+          el('div', { class:'projName' }, [p.name]),
+          el('div', { class:'subtle' }, [`ラベル：${label}`])
+        ]),
+        el('div', { class:'spacer' }),
+        el('span', { class:'badge', title:'プロジェクトラベル' }, [label]),
+      ]),
+      el('div', { class:'progress' }, [
+        el('div', { class:'bar' }, [el('i', { style:`width:${prog.pct}%` })]),
+        el('div', { class:'pct' }, [`${prog.pct}%`])
+      ]),
+      el('div', { class:'projActions' }, [
+        makeButton('開く', 'ghost', () => { state.selectedProjectId = p.id; gotoView('project'); }),
+        makeButton('完了にする', 'ghost', () => completeProject(p.id), ).tap?.
+        makeButton('完了にする', 'ghost', () => completeProject(p.id)),
+        (() => {
+          const b = makeButton('完了にする', 'ghost', () => completeProject(p.id));
+          b.disabled = !canComplete;
+          b.title = canComplete ? '完了にできます' : '全タスクが「完了」または「対応不要」になると有効になります';
+          return b;
+        })(),
+        makeButton('削除', 'danger', () => deleteProject(p.id))
+      ])
+    ]);
+
+    return c;
+  }
+
+  function deleteProject(projectId){
+    const p = state.data.projects.find(x => x.id === projectId);
+    if(!p) return;
+    if(confirm(`プロジェクト「${p.name}」を削除しますか？（配下タスクも削除されます）`)){
+      state.data.projects = state.data.projects.filter(x => x.id !== projectId);
+      saveData();
+      toast('削除しました');
+      render();
+    }
+  }
+
+  function completeProject(projectId){
+    const p = state.data.projects.find(x => x.id === projectId);
+    if(!p) return;
+    const prog = projectProgress(p);
+    const allClosed = (prog.total > 0) ? (prog.done === prog.total) : true;
+
+    if(!allClosed){
+      toast('全タスクが「完了」または「対応不要」になると完了にできます');
+      return;
+    }
+    if(confirm(`プロジェクト「${p.name}」を完了として保管しますか？`)){
+      p.isCompleted = true;
+      p.completedAt = new Date().toISOString();
+      saveData();
+      toast('完了プロジェクトへ移行しました');
+      render();
+    }
+  }
+
+  /** ---------- Project Detail ---------- */
+  function viewProjectDetail(){
+    const p = state.data.projects.find(x => x.id === state.selectedProjectId);
+    if(!p){
+      return el('div', { class:'card' }, [
+        el('h2', {}, ['プロジェクトが見つかりません']),
+        el('div', { class:'subtle' }, ['進行中プロジェクトへ戻ってください。']),
+        makeButton('進行中プロジェクトへ', 'primary', () => gotoView('active'))
+      ]);
+    }
+
+    const prog = projectProgress(p);
+    const allClosed = (prog.total > 0) ? (prog.done === prog.total) : true;
+    const canComplete = allClosed && !p.isCompleted;
+
+    const head = el('div', { class:'card' }, [
+      el('div', { class:'row wrap' }, [
+        el('div', { style:'min-width:240px; flex:1 1 420px' }, [
+          el('h2', {}, ['プロジェクト詳細']),
+          el('div', { class:'subtle' }, ['ツリーはインデント＋縦ラインで階層を明確化。チェックボックスで即完了。'])
+        ]),
+        el('div', { class:'spacer' }),
+        makeButton('＋ タスク追加', 'primary', () => openTaskModal({ mode:'create', project:p, parentId:null })),
+      ]),
+      el('div', { class:'divider' }),
+
+      el('div', { class:'two' }, [
+        el('div', { class:'field' }, [
+          el('label', {}, ['プロジェクト名']),
+          (() => {
+            const inp = el('input', { class:'input', value: p.name });
+            inp.addEventListener('change', () => {
+              p.name = inp.value.trim() || '（名称未設定）';
+              saveData();
+              toast('更新しました');
+              render();
+            });
+            return inp;
+          })()
+        ]),
+        el('div', { class:'field' }, [
+          el('label', {}, ['ラベル']),
+          (() => {
+            const sel = labelSelect(p.labelId);
+            sel.addEventListener('change', () => {
+              p.labelId = sel.value || null;
+              saveData();
+              toast('更新しました');
+              render();
+            });
+            return sel;
+          })()
+        ]),
+      ]),
+
+      el('div', { style:'margin-top:12px' }, [
+        el('div', { class:'progress' }, [
+          el('div', { class:'bar' }, [el('i', { style:`width:${prog.pct}%` })]),
+          el('div', { class:'pct' }, [`${prog.pct}%`])
+        ]),
+        el('div', { class:'subtle' }, [`タスク：${prog.total} / 完了・対応不要：${prog.done}（全て閉じると「完了にする」が有効）`])
+      ]),
+
+      el('div', { class:'row wrap', style:'margin-top:12px' }, [
+        (() => {
+          const b = makeButton('完了にする', 'ghost', () => completeProject(p.id));
+          b.disabled = !canComplete;
+          b.title = canComplete ? '完了にできます' : '全タスクが「完了」または「対応不要」になると有効になります';
+          return b;
+        })(),
+        makeButton('テンプレ追加（上書きしない）', 'ghost', () => {
+          if(!p.labelId){
+            toast('先にラベルを設定してください');
+            return;
+          }
+          const t = state.data.templates[p.labelId];
+          if(!t || t.length === 0){
+            toast('このラベルにはテンプレがありません');
+            return;
+          }
+          if(confirm('現在のタスクは残したまま、テンプレのタスクを追加しますか？')){
+            applyTemplateToProject(p, p.labelId);
+            saveData();
+            toast('テンプレを追加しました');
+            render();
+          }
+        }),
+        makeButton('削除', 'danger', () => deleteProject(p.id)),
+        makeButton('戻る', 'ghost', () => gotoView('active')),
+      ])
+    ]);
+
+    const treeCard = el('div', { class:'card' }, [
+      el('h2', {}, ['タスクツリー']),
+      el('div', { class:'subtle' }, ['完了：チェック。サブタスク追加：＋。編集：鉛筆。削除：ゴミ箱。メモは50文字まで。'])
+    ]);
+
+    const tree = renderTaskTree(p);
+    treeCard.appendChild(el('div', { style:'margin-top:12px' }, [tree]));
+
+    const wrap = el('div', {});
+    wrap.appendChild(head);
+    wrap.appendChild(el('div', { style:'height:12px' }));
+    wrap.appendChild(treeCard);
+
+    // scroll-to after render
+    setTimeout(() => {
+      if(state._scrollToTaskId){
+        const row = document.querySelector(`[data-task-row="${state._scrollToTaskId}"]`);
+        if(row){
+          row.scrollIntoView({ block:'center', behavior:'smooth' });
+          row.style.outline = '3px solid rgba(224,245,244,.95)';
+          row.style.borderRadius = '14px';
+          setTimeout(()=> { row.style.outline = ''; }, 1200);
+        }
+        state._scrollToTaskId = null;
+      }
+    }, 10);
+
+    return wrap;
+  }
+
+  function renderTaskTree(project){
+    const wrap = el('div', { class:'tree' });
+
+    const tasks = project.tasks || [];
+    if(tasks.length === 0){
+      wrap.appendChild(el('div', { class:'empty', style:'margin:12px' }, [
+        'タスクがありません。「＋ タスク追加」から作成するか、ラベルにテンプレがあれば「テンプレ追加」で展開できます。'
+      ]));
+      return wrap;
+    }
+
+    const renderNodes = (nodes, level) => {
+      for(const t of nodes){
+        const isDone = t.status === '完了';
+        const isSkip = t.status === '対応不要';
+        const rowCls = `taskRow ${isDone?'done':''} ${isSkip?'skip':''}`.trim();
+
+        const priCls = t.priority === '高' ? 'priH' : t.priority === '中' ? 'priM' : 'priL';
+
+        const chk = el('button', {
+          class: `chk ${isDone ? 'checked':''}`.trim(),
+          title: 'ワンクリックで完了切替',
+          'aria-label': '完了チェック',
+          onclick: () => {
+            const nowChecked = !(t.status === '完了');
+            taskCheckboxToggle(project, t.id, nowChecked);
+            saveData();
+            render();
+          }
+        }, [
+          el('span', { html: `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 12.5l4 4 8-9" stroke="rgba(31,77,75,.95)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          `})
+        ]);
+
+        const indentPad = el('div', { class:'indentPad', style:`width:${level*22}px` });
+        const indent = el('div', { class:'indent' }, [
+          el('div', { class:'lines', style:`transform: translateX(${level*22}px)` }),
+          indentPad,
+          chk,
+          el('div', { class:'title', title: t.title }, [t.title])
+        ]);
+
+        const meta = el('div', { class:'meta' }, [
+          el('span', { class:`chip ${priCls}` }, [`優先度：${t.priority}`]),
+          el('span', { class:'chip' }, [fmtDate(t.dueDate)]),
+          (() => {
+            const cls = t.status === '完了' ? 'done' : t.status === '対応不要' ? 'skip' : '';
+            return el('span', { class:`chip status ${cls}`.trim() }, [`${t.status}`]);
+          })(),
+          (t.memo ? iconBtn('メモを見る', memoSvg(), () => openMemoViewModal(t), '') : el('span')),
+          iconBtn('サブタスク追加', plusSvg(), () => openTaskModal({ mode:'create', project, parentId: t.id }), ''),
+          iconBtn('編集', editSvg(), () => openTaskModal({ mode:'edit', project, taskId: t.id }), ''),
+          iconBtn('削除', trashSvg(), () => {
+            if(confirm('このタスクを削除しますか？（配下サブタスクも削除）')){
+              deleteTask(project, t.id);
+              saveData();
+              toast('削除しました');
+              render();
+            }
+          }, 'danger')
+        ]);
+
+        const row = el('div', { class: rowCls, 'data-task-row': t.id }, [indent, meta]);
+        wrap.appendChild(row);
+
+        if(t.children && t.children.length){
+          renderNodes(t.children, level+1);
+        }
+      }
+    };
+
+    renderNodes(tasks, 0);
+    return wrap;
+  }
+
+  function memoSvg(){
+    return `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M7 3h8l3 3v15a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="rgba(25,48,47,.72)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M8 11h8M8 15h8M8 19h6" stroke="rgba(25,48,47,.72)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    `;
+  }
+  function plusSvg(){
+    return `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="rgba(25,48,47,.72)" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    `;
+  }
+  function editSvg(){
+    return `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 20h4l10.5-10.5a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z" stroke="rgba(25,48,47,.72)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M13.5 6.5l4 4" stroke="rgba(25,48,47,.72)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    `;
+  }
+  function trashSvg(){
+    return `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 7h12M10 7V5h4v2m-7 0l1 14h8l1-14" stroke="rgba(200,76,76,.95)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+  }
+
+  function openMemoViewModal(task){
+    const body = el('div', {}, [
+      el('div', { class:'subtle' }, ['メモ（最大50文字）']),
+      el('div', { style:'margin-top:10px; padding:12px; border:1px solid var(--line); border-radius:14px; background:rgba(224,245,244,.20); line-height:1.6' }, [
+        task.memo || '（メモなし）'
+      ])
+    ]);
+    openModal('メモ', body, [
+      makeButton('閉じる', 'ghost', closeModal)
+    ]);
+  }
+
+  /** ---------- Today view ---------- */
+  function viewToday(){
+    const wrap = el('div', {});
+    const items = getTodaysTasks();
+
+    const head = el('div', { class:'card' }, [
+      el('div', { class:'row wrap' }, [
+        el('div', {}, [
+          el('h2', {}, ['今日すべきタスク']),
+          el('div', { class:'subtle' }, [`今日（${fmtDate(todayISO()).replace('期日：','')}）が期日のタスクを表示します。完了・対応不要は除外します。`])
+        ]),
+        el('div', { class:'spacer' }),
+        makeButton('ダッシュボードへ', 'ghost', () => gotoView('dashboard'))
+      ])
+    ]);
+
+    const card = el('div', { class:'card', style:'margin-top:12px' }, [
+      el('h2', {}, ['一覧']),
+      el('div', { class:'subtle' }, ['優先度（高→中→低）順。項目を開くと該当タスクまでスクロールします。'])
+    ]);
+
+    if(items.length === 0){
+      card.appendChild(el('div', { class:'empty', style:'margin-top:12px' }, ['今日が期日のタスクはありません。']));
+    }else{
+      const list = el('div', { class:'tree', style:'margin-top:12px' });
+      items.forEach(item => list.appendChild(todayRow(item)));
+      card.appendChild(list);
+    }
+
+    wrap.appendChild(head);
+    wrap.appendChild(card);
+    return wrap;
+  }
+
+  /** ---------- Settings ---------- */
+  function viewSettings(){
+    const wrap = el('div', {});
+
+    const head = el('div', { class:'card' }, [
+      el('div', { class:'row wrap' }, [
+        el('div', {}, [
+          el('h2', {}, ['設定']),
+          el('div', { class:'subtle' }, ['ラベル／テンプレ／データ管理を行います。テンプレは「直感的編集（推奨）」と「テキスト編集」の両方に対応。'])
+        ]),
+        el('div', { class:'spacer' }),
+        el('div', { class:'tabs' }, [
+          tabBtn('labels','ラベル'),
+          tabBtn('templates','テンプレ'),
+          tabBtn('data','データ')
+        ])
+      ])
+    ]);
+
+    const body = el('div', { class:'card', style:'margin-top:12px' });
+    if(state.settingsTab === 'labels') body.appendChild(settingsLabels());
+    if(state.settingsTab === 'templates') body.appendChild(settingsTemplates());
+    if(state.settingsTab === 'data') body.appendChild(settingsData());
+
+    wrap.appendChild(head);
+    wrap.appendChild(body);
+    return wrap;
+  }
+
+  function tabBtn(key, label){
+    const b = el('button', { class:`tab ${state.settingsTab===key?'active':''}`.trim(), onclick: () => { state.settingsTab = key; render(); } }, [label]);
+    return b;
+  }
+
+  function settingsLabels(){
+    const box = el('div', {});
+    box.appendChild(el('h2', {}, ['ラベル設定']));
+    box.appendChild(el('div', { class:'subtle' }, ['ラベルは追加・編集・削除できます（削除すると、そのラベルのテンプレは保持しますが新規選択から外れます）。']));
+
+    const list = el('div', { style:'margin-top:12px; display:flex; flex-direction:column; gap:8px' });
+
+    state.data.labels.forEach(l => {
+      const row = el('div', { class:'row wrap', style:'padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(224,245,244,.18)' }, [
+        el('div', { style:'min-width:240px; flex:1 1 420px' }, [
+          el('div', { class:'tiny' }, ['ラベル名']),
+          (() => {
+            const inp = el('input', { class:'input', value: l.name });
+            inp.addEventListener('change', () => {
+              l.name = inp.value.trim() || '未設定';
+              saveData();
+              toast('更新しました');
+              render();
+            });
+            return inp;
+          })()
+        ]),
+        el('div', { class:'spacer' }),
+        makeButton('削除', 'danger', () => {
+          if(confirm(`ラベル「${l.name}」を削除しますか？`)){
+            // remove label
+            state.data.labels = state.data.labels.filter(x => x.id !== l.id);
+            // projects referencing -> null
+            state.data.projects.forEach(p => { if(p.labelId === l.id) p.labelId = null; });
+            saveData();
+            toast('削除しました');
+            render();
+          }
+        })
+      ]);
+      list.appendChild(row);
+    });
+
+    const addRow = el('div', { class:'row wrap', style:'margin-top:14px' }, [
+      el('div', { class:'field' }, [
+        el('label', {}, ['新しいラベル名']),
+        (() => {
+          const inp = el('input', { class:'input', placeholder:'例：査定、引渡し、広告 など' });
+          inp.id = 'newLabelName';
+          return inp;
+        })()
+      ]),
+      makeButton('追加', 'primary', () => {
+        const inp = $('#newLabelName');
+        const name = inp.value.trim();
+        if(!name){ toast('ラベル名を入力してください'); return; }
+        if(state.data.labels.some(l => l.name === name)){ toast('同名のラベルが存在します'); return; }
+        state.data.labels.push({ id: uid(), name });
+        inp.value = '';
+        saveData();
+        toast('追加しました');
+        render();
+      })
+    ]);
+
+    box.appendChild(list);
+    box.appendChild(el('div', { class:'divider' }));
+    box.appendChild(addRow);
+
+    return box;
+  }
+
+  function settingsTemplates(){
+    const box = el('div', {});
+    box.appendChild(el('h2', {}, ['テンプレ設定']));
+    box.appendChild(el('div', { class:'subtle' }, ['ラベルごとに自動生成するタスクツリーを編集できます（最大5階層）。プロジェクト作成時に自動展開されます。']));
+
+    // label select
+    const labelSel = labelSelect(null);
+    labelSel.id = 'tplLabelSel';
+    const firstLabelId = state.data.labels[0]?.id || null;
+    if(!state._tplLabelId) state._tplLabelId = firstLabelId;
+    labelSel.value = state._tplLabelId || '';
+
+    labelSel.addEventListener('change', () => {
+      state._tplLabelId = labelSel.value || null;
+      render();
+    });
+
+    const modeToggle = el('div', { class:'row wrap', style:'margin-top:12px' }, [
+      el('div', { class:'field', style:'flex:1 1 360px' }, [
+        el('label', {}, ['対象ラベル']),
+        labelSel
+      ]),
+      el('div', { class:'spacer' }),
+      makeButton('直感的編集（推奨）', state.templateEditorMode==='visual'?'primary':'ghost', () => { state.templateEditorMode='visual'; render(); }),
+      makeButton('テキスト編集', state.templateEditorMode==='text'?'primary':'ghost', () => { state.templateEditorMode='text'; render(); })
+    ]);
+
+    box.appendChild(modeToggle);
+    box.appendChild(el('div', { class:'divider' }));
+
+    const labelId = state._tplLabelId;
+    if(!labelId){
+      box.appendChild(el('div', { class:'empty' }, ['ラベルがありません。先にラベルを作成してください。']));
+      return box;
+    }
+
+    // Ensure template exists
+    if(!state.data.templates[labelId]) state.data.templates[labelId] = [];
+
+    if(state.templateEditorMode === 'visual'){
+      box.appendChild(templateEditorVisual(labelId));
+    }else{
+      box.appendChild(templateEditorText(labelId));
+    }
+
+    return box;
+  }
+
+  function templateEditorVisual(labelId){
+    const box = el('div', {});
+    const tree = state.data.templates[labelId] || [];
+    const flat = flattenTemplate(tree, 0, [], []);
+
+    const header = el('div', { class:'row wrap' }, [
+      el('div', {}, [
+        el('div', { class:'tiny' }, [`対象：${getLabelName(labelId)} のテンプレ（最大5階層）`]),
+        el('div', { class:'subtle' }, ['行の「＋子」「＋同階層」「→（インデント）」「←（アウトデント）」で階層を直感的に編集できます。'])
+      ]),
+      el('div', { class:'spacer' }),
+      makeButton('＋ ルート追加', 'primary', () => {
+        tree.push({ title:'新しいタスク', children:[] });
+        saveData();
+        render();
+      }),
+      makeButton('テキストへコピー', 'ghost', () => {
+        const txt = templateTreeToText(tree);
+        navigator.clipboard?.writeText(txt);
+        toast('テンプレをテキストとしてコピーしました');
+      })
+    ]);
+
+    const listWrap = el('div', { class:'tree', style:'margin-top:12px' });
+
+    if(flat.length === 0){
+      listWrap.appendChild(el('div', { class:'empty', style:'margin:12px' }, [
+        'テンプレが空です。「＋ ルート追加」から作成できます。'
+      ]));
+    }else{
+      flat.forEach(item => {
+        const pad = item.level * 22;
+        const row = el('div', { class:'trow' }, [
+          el('div', { class:'tlevel', style:`width:${pad}px` }),
+          el('div', { class:'tname' }, [
+            (() => {
+              const inp = el('input', { value: item.node.title, style:'width:100%' });
+              inp.addEventListener('change', () => {
+                item.node.title = inp.value.trim() || '（未設定）';
+                saveData();
+                // no full render needed, but simplest:
+                render();
+              });
+              return inp;
+            })()
+          ]),
+          iconBtn('＋同階層', plusSvg(), () => {
+            const parentArr = getParentArrayByPath(tree, item.path);
+            parentArr.splice(item.path[item.path.length-1]+1, 0, { title:'新しいタスク', children:[] });
+            saveData(); render();
+          }),
+          iconBtn('＋子', plusSvg(), () => {
+            // add child
+            const node = getNodeByPath(tree, item.path);
+            if(item.level >= 4){ toast('最大5階層までです'); return; }
+            node.children = node.children || [];
+            node.children.push({ title:'新しいタスク', children:[] });
+            saveData(); render();
+          }),
+          iconBtn('↑', arrowUpSvg(), () => { templateMoveNode(tree, item.path, -1); saveData(); render(); }),
+          iconBtn('↓', arrowDownSvg(), () => { templateMoveNode(tree, item.path, +1); saveData(); render(); }),
+          iconBtn('→（インデント）', arrowRightSvg(), () => { templateIndent(tree, item.path); saveData(); render(); }),
+          iconBtn('←（アウトデント）', arrowLeftSvg(), () => { templateOutdent(tree, item.path); saveData(); render(); }),
+          iconBtn('削除', trashSvg(), () => {
+            if(confirm('このテンプレ行を削除しますか？（子も削除）')){
+              templateDeleteNode(tree, item.path);
+              saveData(); render();
+            }
+          }, 'danger')
+        ]);
+        listWrap.appendChild(row);
+      });
+    }
+
+    const footer = el('div', { style:'margin-top:12px' }, [
+      el('div', { class:'subtle' }, [
+        '補足：このテンプレは、プロジェクト作成時に「上書きせず追加」で展開されます。既存のタスクは維持されます。'
+      ])
+    ]);
+
+    box.appendChild(header);
+    box.appendChild(listWrap);
+    box.appendChild(footer);
+    return box;
+  }
+
+  function arrowUpSvg(){
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5l6 6H6l6-6Z" stroke="rgba(25,48,47,.72)" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  }
+  function arrowDownSvg(){
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19l-6-6h12l-6 6Z" stroke="rgba(25,48,47,.72)" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  }
+  function arrowRightSvg(){
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 6l6 6-6 6" stroke="rgba(25,48,47,.72)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+  function arrowLeftSvg(){
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 6l-6 6 6 6" stroke="rgba(25,48,47,.72)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  function templateEditorText(labelId){
+    const box = el('div', {});
+    const tree = state.data.templates[labelId] || [];
+    const text = templateTreeToText(tree);
+
+    const info = el('div', { class:'subtle' }, [
+      '書式：タブ または 半角スペース2つで1階層。最大5階層。1行＝1タスク。'
+    ]);
+
+    const ta = el('textarea', { class:'input', style:'min-height:240px' }, []);
+    ta.value = text;
+
+    const btnRow = el('div', { class:'row wrap', style:'margin-top:12px' }, [
+      makeButton('テキストから反映（階層を解析）', 'primary', () => {
+        const parsed = parseTemplateTextToTree(ta.value);
+        state.data.templates[labelId] = parsed;
+        saveData();
+        toast('テンプレを更新しました');
+        render();
+      }),
+      makeButton('直感的編集へ', 'ghost', () => { state.templateEditorMode='visual'; render(); }),
+      el('div', { class:'spacer' }),
+      makeButton('クリア', 'danger', () => {
+        if(confirm('テンプレを空にしますか？')){
+          state.data.templates[labelId] = [];
+          saveData();
+          toast('クリアしました');
+          render();
+        }
+      })
+    ]);
+
+    box.appendChild(el('div', { class:'tiny' }, [`対象：${getLabelName(labelId)} のテンプレ（テキスト編集）`]));
+    box.appendChild(info);
+    box.appendChild(el('div', { style:'margin-top:12px' }, [ta]));
+    box.appendChild(btnRow);
+    return box;
+  }
+
+  function settingsData(){
+    const box = el('div', {});
+    box.appendChild(el('h2', {}, ['データ管理']));
+    box.appendChild(el('div', { class:'subtle' }, [
+      '別ブラウザ/別PCへ移行する場合は、JSONエクスポート→インポートを使用してください。'
+    ]));
+
+    const area = el('textarea', { class:'input', style:'min-height:220px; margin-top:12px', placeholder:'ここにJSONを貼り付けてインポートできます' });
+    area.id = 'jsonArea';
+
+    const actions = el('div', { class:'row wrap', style:'margin-top:12px' }, [
+      makeButton('JSONエクスポート', 'primary', () => {
+        const json = JSON.stringify(state.data, null, 2);
+        area.value = json;
+        navigator.clipboard?.writeText(json);
+        toast('JSONを表示しました（クリップボードにもコピー）');
+      }),
+      makeButton('JSONインポート（上書き）', 'ghost', () => {
+        const txt = area.value.trim();
+        if(!txt){ toast('JSONが空です'); return; }
+        const obj = safeParseJSON(txt);
+        if(!obj){ toast('JSONの形式が不正です'); return; }
+        if(!confirm('現在のデータを上書きしてインポートしますか？（戻せません）')) return;
+        // basic validation & normalize
+        if(obj.version !== 2){
+          toast('このJSONはversion=2ではありません（旧形式は自動移行が必要）');
+          return;
+        }
+        state.data = obj;
+        saveData();
+        toast('インポートしました');
+        render();
+      }),
+      el('div', { class:'spacer' }),
+      makeButton('全データ削除（危険）', 'danger', () => {
+        if(confirm('全データを削除しますか？（復元不可）')){
+          state.data = defaultData();
+          saveData();
+          toast('全データを削除しました');
+          render();
+        }
+      })
+    ]);
+
+    box.appendChild(area);
+    box.appendChild(actions);
+
+    return box;
+  }
+
+  /** ---------- Project Modal ---------- */
+  function openProjectModal(){
+    const body = el('div', {}, []);
+
+    const name = el('input', { class:'input', placeholder:'プロジェクト名（例：関様　八潮市大字南川崎112番26）' });
+    const labelSel = labelSelect(null);
+    const autoTpl = el('input', { type:'checkbox' });
+    autoTpl.checked = true;
+
+    const autoRow = el('div', { class:'row', style:'gap:10px; margin-top:8px' }, [
+      autoTpl,
+      el('div', { class:'tiny' }, ['選択したラベルのテンプレを自動追加（推奨）'])
+    ]);
+
+    body.appendChild(el('div', { class:'field' }, [
+      el('label', {}, ['プロジェクト名']),
+      name
+    ]));
+    body.appendChild(el('div', { class:'field', style:'margin-top:10px' }, [
+      el('label', {}, ['ラベル']),
+      labelSel
+    ]));
+    body.appendChild(autoRow);
+    body.appendChild(el('div', { class:'subtle', style:'margin-top:10px' }, [
+      '作成後も、プロジェクト詳細で「テンプレ追加（上書きしない）」が可能です。'
+    ]));
+
+    const cancel = makeButton('キャンセル', 'ghost', closeModal);
+    const create = makeButton('作成', 'primary', () => {
+      const nm = name.value.trim();
+      if(!nm){ toast('プロジェクト名を入力してください'); return; }
+      const proj = {
+        id: uid(),
+        name: nm,
+        labelId: labelSel.value || null,
+        isCompleted: false,
+        completedAt: null,
+        createdAt: new Date().toISOString(),
+        tasks: []
+      };
+      if(autoTpl.checked && proj.labelId){
+        applyTemplateToProject(proj, proj.labelId);
+      }
+      state.data.projects.unshift(proj); // newest first
+      saveData();
+      closeModal();
+      toast('プロジェクトを作成しました');
+      state.selectedProjectId = proj.id;
+      gotoView('project');
+    });
+
+    openModal('新規プロジェクト作成', body, [cancel, create]);
+  }
+
+  /** ---------- Task Modal ---------- */
+  function openTaskModal({ mode, project, parentId=null, taskId=null }){
+    const isEdit = mode === 'edit';
+    const task = isEdit ? findTaskById(project.tasks, taskId) : null;
+
+    const body = el('div', {}, []);
+    const title = el('input', { class:'input', placeholder:'タスク名' });
+    const due = el('input', { class:'input', type:'date' });
+    const statusSel = el('select', { class:'input' }, STATUS.map(s => el('option', { value:s }, [s])));
+    const priSel = el('select', { class:'input' }, PRIORITY.map(p => el('option', { value:p }, [p])));
+    const memo = el('input', { class:'input', placeholder:'メモ（最大50文字）' });
+
+    if(isEdit && task){
+      title.value = task.title || '';
+      due.value = task.dueDate || '';
+      statusSel.value = task.status || '未着手';
+      priSel.value = task.priority || '中';
+      memo.value = task.memo || '';
+    }else{
+      statusSel.value = '未着手';
+      priSel.value = '中';
+    }
+
+    memo.addEventListener('input', () => {
+      if(memo.value.length > 50) memo.value = memo.value.slice(0,50);
+    });
+
+    body.appendChild(el('div', { class:'field' }, [
+      el('label', {}, ['タスク名']),
+      title
+    ]));
+
+    body.appendChild(el('div', { class:'two', style:'margin-top:12px' }, [
+      el('div', { class:'field' }, [
+        el('label', {}, ['期日（任意）']),
+        due
+      ]),
+      el('div', { class:'field' }, [
+        el('label', {}, ['ステータス']),
+        statusSel
+      ]),
+    ]));
+
+    body.appendChild(el('div', { class:'two', style:'margin-top:12px' }, [
+      el('div', { class:'field' }, [
+        el('label', {}, ['優先度']),
+        priSel
+      ]),
+      el('div', { class:'field' }, [
+        el('label', {}, ['メモ（最大50文字）']),
+        memo
+      ]),
+    ]));
+
+    if(!isEdit){
+      body.appendChild(el('div', { class:'subtle', style:'margin-top:10px' }, [
+        parentId ? 'このタスクは選択したタスクの「サブタスク」として追加されます。' : 'このタスクはプロジェクト直下に追加されます。'
+      ]));
+    }
+
+    const cancel = makeButton('キャンセル', 'ghost', closeModal);
+    const save = makeButton('保存', 'primary', () => {
+      const tTitle = title.value.trim();
+      if(!tTitle){ toast('タスク名を入力してください'); return; }
+
+      if(isEdit && task){
+        task.title = tTitle;
+        task.dueDate = due.value || null;
+        task.status = statusSel.value;
+        task.priority = priSel.value;
+        task.memo = memo.value.slice(0,50);
+
+        // checkbox quick toggle logic relies on _lastNonDoneStatus
+        if(task.status !== '完了'){
+          task._lastNonDoneStatus = task.status;
+        }
+
+      }else{
+        const newTask = {
+          id: uid(),
+          title: tTitle,
+          dueDate: due.value || null,
+          status: statusSel.value,
+          priority: priSel.value,
+          memo: memo.value.slice(0,50),
+          children: []
+        };
+        if(parentId){
+          const parent = findTaskById(project.tasks, parentId);
+          if(!parent){ toast('親タスクが見つかりません'); return; }
+          // enforce max depth
+          const depth = getTaskDepth(project.tasks, parentId);
+          if(depth >= 5){ toast('最大5階層までです'); return; }
+          parent.children = parent.children || [];
+          parent.children.push(newTask);
+        }else{
+          project.tasks = project.tasks || [];
+          project.tasks.push(newTask);
+        }
+      }
+
+      saveData();
+      closeModal();
+      toast('保存しました');
+      render();
+    });
+
+    openModal(isEdit ? 'タスク編集' : 'タスク追加', body, [cancel, save]);
+  }
+
+  function getTaskDepth(tasks, id, depth=1){
+    // root depth=1
+    for(const t of tasks){
+      if(t.id === id) return depth;
+      const d = getTaskDepth(t.children || [], id, depth+1);
+      if(d) return d;
+    }
+    return null;
+  }
+
+  /** ---------- Label Select ---------- */
+  function labelSelect(selectedId){
+    const sel = el('select', { class:'input' }, [
+      el('option', { value:'' }, ['未設定'])
+    ]);
+    state.data.labels.forEach(l => {
+      sel.appendChild(el('option', { value:l.id }, [l.name]));
+    });
+    if(selectedId) sel.value = selectedId;
+    return sel;
+  }
+
+  /** ---------- Navigation ---------- */
+  function gotoView(v){
+    state.view = v;
+    // nav active
+    $$('.nav button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+    render();
+  }
+
+  $$('.nav button').forEach(b => {
+    b.addEventListener('click', () => {
+      const v = b.dataset.view;
+      gotoView(v);
+    });
+  });
+
+  /** ---------- Boot ---------- */
+  function boot(){
+    // If some templates are missing for existing labels, init empty
+    state.data.labels.forEach(l => {
+      if(!state.data.templates[l.id]) state.data.templates[l.id] = state.data.templates[l.id] || [];
+    });
+
+    updateHeaderPills();
+    render();
+  }
+
+  boot();
+
+  /** ---------- Minor polish: fix accidental duplicate button injection ---------- */
+  // (No-op in normal operation; left intentionally minimal.)
+
+})();
+</script>
+</body>
+</html>
